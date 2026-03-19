@@ -1,0 +1,47 @@
+{
+  "goal_to_workout": {
+    "lose_weight": [
+      "Cardio",
+      "HIIT"
+    ],
+    "gain_muscle": [
+      "Strength"
+    ],
+    "maintain_weight": [
+      "Yoga",
+      "Cardio"
+    ],
+    "improve_endurance": [
+      "HIIT",
+      "Cardio"
+    ]
+  },
+  "goal_calorie_factor": {
+    "lose_weight": 0.8,
+    "gain_muscle": 1.15,
+    "maintain_weight": 1.0,
+    "improve_endurance": 1.05
+  },
+  "activity_to_days": {
+    "sedentary": 3,
+    "lightly_active": 3,
+    "moderately_active": 4,
+    "very_active": 5,
+    "extra_active": 6
+  },
+  "model_features": [
+    "Age",
+    "gender_enc",
+    "Weight (kg)",
+    "Height_cm",
+    "BMI",
+    "Experience_Level"
+  ],
+  "difficulty_classes": [
+    "Advanced",
+    "Beginner",
+    "Intermediate"
+  ],
+  "best_model": "Random Forest",
+  "best_f1": 0.997
+}

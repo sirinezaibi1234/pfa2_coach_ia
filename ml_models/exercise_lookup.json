@@ -1,0 +1,602 @@
+{
+  "Strength_Beginner": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Strengthens triceps and chest",
+      "burns_cal": 338.0,
+      "muscle": "Triceps"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Builds shoulder width",
+      "burns_cal": 344.0,
+      "muscle": "Chest, Triceps"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Strengthens lower body",
+      "burns_cal": 349.0,
+      "muscle": "Back, Biceps"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Improves core rotation strength",
+      "burns_cal": 328.0,
+      "muscle": "Glutes, Hamstrings"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Strengthens triceps and chest",
+      "burns_cal": 343.0,
+      "muscle": "Legs, Shoulders, Core"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Builds lower body power",
+      "burns_cal": 349.0,
+      "muscle": "Core"
+    }
+  ],
+  "Strength_Intermediate": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Targets obliques and improves core rotation",
+      "burns_cal": 330.0,
+      "muscle": "Chest, Triceps"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Targets lower chest",
+      "burns_cal": 351.0,
+      "muscle": "Back, Biceps"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Improves core stability",
+      "burns_cal": 340.0,
+      "muscle": "Core"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 5.0,
+      "reps": 21.0,
+      "benefit": "Strengthens shoulders",
+      "burns_cal": 344.0,
+      "muscle": "Shoulders, Triceps"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Strengthens core and improves mobility",
+      "burns_cal": 336.0,
+      "muscle": "Lower Back, Glutes"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Builds explosive upper body power",
+      "burns_cal": 350.0,
+      "muscle": "Quadriceps"
+    }
+  ],
+  "Strength_Advanced": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Activates and strengthens glutes",
+      "burns_cal": 353.0,
+      "muscle": "Quadriceps, Hamstrings, Glutes"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds calf muscles",
+      "burns_cal": 350.0,
+      "muscle": "Back, Biceps"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Targets obliques and improves core rotation",
+      "burns_cal": 336.0,
+      "muscle": "Chest, Triceps"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Isolates triceps",
+      "burns_cal": 339.0,
+      "muscle": "Core"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 5.0,
+      "reps": 20.0,
+      "benefit": "Improves shoulder health and posture",
+      "burns_cal": 350.0,
+      "muscle": "Core, Obliques"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Strengthens lower abs and hip flexors",
+      "burns_cal": 342.0,
+      "muscle": "Legs, Core"
+    }
+  ],
+  "HIIT_Beginner": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Improves back strength and posture",
+      "burns_cal": 339.0,
+      "muscle": "Back, Core, Shoulders"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Improves lower back strength",
+      "burns_cal": 345.0,
+      "muscle": "Full Body"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Improves core stability and balance",
+      "burns_cal": 351.0,
+      "muscle": "Lower Abs"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 21.0,
+      "benefit": "Improves lower back strength",
+      "burns_cal": 340.0,
+      "muscle": "Lower Abs"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Builds unilateral leg strength",
+      "burns_cal": 346.0,
+      "muscle": "Full Core"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Enhances full-body coordination and stability",
+      "burns_cal": 349.0,
+      "muscle": "Lower Back, Glutes"
+    }
+  ],
+  "HIIT_Intermediate": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Strengthens lower abs",
+      "burns_cal": 337.0,
+      "muscle": "Back, Core, Shoulders"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Targets lower abs",
+      "burns_cal": 354.0,
+      "muscle": "Shoulders"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Targets upper chest",
+      "burns_cal": 352.0,
+      "muscle": "Upper Back, Rear Deltoids"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Strengthens triceps and chest",
+      "burns_cal": 338.0,
+      "muscle": "Core"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds unilateral leg strength",
+      "burns_cal": 348.0,
+      "muscle": "Biceps, Forearms"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Strengthens lower abs and hip flexors",
+      "burns_cal": 352.0,
+      "muscle": "Full Body, Core, Shoulders"
+    }
+  ],
+  "HIIT_Advanced": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 21.0,
+      "benefit": "Full body workout",
+      "burns_cal": 349.0,
+      "muscle": "Quadriceps, Calves, Glutes"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Strengthens lower abs",
+      "burns_cal": 317.0,
+      "muscle": "Chest, Triceps, Shoulders"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Advanced core exercise",
+      "burns_cal": 339.0,
+      "muscle": "Full Core"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Improves cardiovascular fitness",
+      "burns_cal": 346.0,
+      "muscle": "Quadriceps, Hamstrings, Glutes"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Isolates triceps",
+      "burns_cal": 336.0,
+      "muscle": "Quadriceps, Calves, Glutes"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Improves shoulder health and posture",
+      "burns_cal": 348.0,
+      "muscle": "Back, Core, Shoulders"
+    }
+  ],
+  "Cardio_Beginner": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Advanced core exercise",
+      "burns_cal": 344.0,
+      "muscle": "Shoulders, Triceps"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Improves posture and strengthens upper back",
+      "burns_cal": 345.0,
+      "muscle": "Obliques, Core"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Strengthens triceps and chest",
+      "burns_cal": 349.0,
+      "muscle": "Lower Abs, Hip Flexors"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Improves balance and leg strength",
+      "burns_cal": 343.0,
+      "muscle": "Calves"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Targets lower chest",
+      "burns_cal": 342.0,
+      "muscle": "Lower Abs, Hip Flexors"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Strengthens triceps and chest",
+      "burns_cal": 348.0,
+      "muscle": "Biceps, Forearms"
+    }
+  ],
+  "Cardio_Intermediate": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Improves coordination and cardiovascular health",
+      "burns_cal": 349.0,
+      "muscle": "Quadriceps, Calves, Glutes"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Advanced core exercise",
+      "burns_cal": 340.0,
+      "muscle": "Back, Hamstrings, Glutes"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Targets lower abs",
+      "burns_cal": 322.0,
+      "muscle": "Back, Biceps"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Builds unilateral leg strength",
+      "burns_cal": 341.0,
+      "muscle": "Core, Shoulders, Hips"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds explosive upper body power",
+      "burns_cal": 342.0,
+      "muscle": "Upper Chest, Triceps"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Targets lower chest",
+      "burns_cal": 341.0,
+      "muscle": "Quadriceps"
+    }
+  ],
+  "Cardio_Advanced": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 5.0,
+      "reps": 20.0,
+      "benefit": "Targets obliques and improves core rotation",
+      "burns_cal": 349.0,
+      "muscle": "Glutes, Hamstrings, Core"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds calf muscles",
+      "burns_cal": 330.0,
+      "muscle": "Obliques, Core"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Improves shoulder health and posture",
+      "burns_cal": 344.0,
+      "muscle": "Quadriceps, Calves, Glutes"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Improves shoulder health and posture",
+      "burns_cal": 341.0,
+      "muscle": "Shoulders, Triceps"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Strengthens lower body",
+      "burns_cal": 339.0,
+      "muscle": "Core, Shoulders, Hips"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Strengthens lower abs and hip flexors",
+      "burns_cal": 352.0,
+      "muscle": "Full Body"
+    }
+  ],
+  "Yoga_Beginner": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Builds shoulder width",
+      "burns_cal": 327.0,
+      "muscle": "Full Core"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Full body workout",
+      "burns_cal": 336.0,
+      "muscle": "Lower Chest, Triceps"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Targets abdominal muscles",
+      "burns_cal": 336.0,
+      "muscle": "Lower Back, Glutes"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds explosive upper body power",
+      "burns_cal": 333.0,
+      "muscle": "Quadriceps"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Builds unilateral leg strength and balance",
+      "burns_cal": 347.0,
+      "muscle": "Back, Core, Shoulders"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Improves core stability and upper body strength",
+      "burns_cal": 346.0,
+      "muscle": "Full Body, Core, Shoulders"
+    }
+  ],
+  "Yoga_Intermediate": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Strengthens back and improves posture",
+      "burns_cal": 348.0,
+      "muscle": "Shoulders, Upper Back"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 5.0,
+      "reps": 19.0,
+      "benefit": "Improves shoulder mobility and posture",
+      "burns_cal": 350.0,
+      "muscle": "Glutes, Hamstrings, Core"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds explosive upper body power",
+      "burns_cal": 347.0,
+      "muscle": "Core, Shoulders, Legs"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Improves lower back strength",
+      "burns_cal": 338.0,
+      "muscle": "Glutes, Hamstrings, Core"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 5.0,
+      "reps": 20.0,
+      "benefit": "Isolates and strengthens triceps",
+      "burns_cal": 348.0,
+      "muscle": "Core, Shoulders, Hips"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Advanced core exercise",
+      "burns_cal": 332.0,
+      "muscle": "Legs, Core"
+    }
+  ],
+  "Yoga_Advanced": [
+    {
+      "Name of Exercise": "Bear Crawls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds upper body strength",
+      "burns_cal": 353.0,
+      "muscle": "Chest, Triceps"
+    },
+    {
+      "Name of Exercise": "Bench Press",
+      "sets": 4.0,
+      "reps": 18.0,
+      "benefit": "Builds lower body power",
+      "burns_cal": 348.0,
+      "muscle": "Lower Back, Glutes"
+    },
+    {
+      "Name of Exercise": "Bicep Curls",
+      "sets": 4.0,
+      "reps": 19.0,
+      "benefit": "Builds upper body strength",
+      "burns_cal": 340.0,
+      "muscle": "Lower Abs"
+    },
+    {
+      "Name of Exercise": "Bicycle Crunches",
+      "sets": 5.0,
+      "reps": 20.0,
+      "benefit": "Targets lower abs",
+      "burns_cal": 348.0,
+      "muscle": "Core, Lower Back"
+    },
+    {
+      "Name of Exercise": "Bird Dogs",
+      "sets": 4.0,
+      "reps": 20.0,
+      "benefit": "Improves cardiovascular fitness",
+      "burns_cal": 349.0,
+      "muscle": "Legs, Shoulders, Core"
+    },
+    {
+      "Name of Exercise": "Box Jumps",
+      "sets": 5.0,
+      "reps": 20.0,
+      "benefit": "Improves posture and back strength",
+      "burns_cal": 352.0,
+      "muscle": "Core, Obliques"
+    }
+  ]
+}
