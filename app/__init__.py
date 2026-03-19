@@ -27,17 +27,12 @@ def create_app():
     # Blueprints
     from app.routes.auth import auth_bp
     from app.routes.users import users_bp
-    from app.routes.profile import profile_bp      
+    from app.routes.profile import profile_bp
+    from app.routes.ai import ai_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(profile_bp, url_prefix="/api/profile")
-
-    # Create tables
-    with app.app_context():
-        from app.models.user import User            
-        from app.models.user_profile import UserProfile  
-        from app.models.objective import Objective  
-        db.create_all()
+    app.register_blueprint(ai_bp, url_prefix="/api/ai")  # ✅ ajouté
 
     return app
