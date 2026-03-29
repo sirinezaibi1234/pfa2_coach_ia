@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 from app.client.huggingface_client import HuggingFaceClient
 
-ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
+ai_bp = Blueprint("ai", __name__)
 hf = HuggingFaceClient()
 
 @ai_bp.route("/text", methods=["POST"])
