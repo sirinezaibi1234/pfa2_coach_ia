@@ -1,141 +1,130 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { User, Objective } from './types'
+import { User } from './types'
+
+const API_BASE = 'http://localhost:5000/api'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function saveSession(token: string, user: User) {
+  localStorage.setItem('access_token', token)
+  localStorage.setItem('user', JSON.stringify(user))
+}
+
+function clearSession() {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('user')
+}
+
+/**
+ * Map the backend user.to_dict() shape → frontend User type.
+ * The backend user object doesn't carry profile/objectives directly,
+ * so we accept them as optional extras (set after signup).
+ */
+function mapBackendUser(backendUser: Record<string, unknown>, extras?: Record<string, unknown>): User {
+  return {
+    id:                  String(backendUser.id ?? ''),
+    username:            String(backendUser.username ?? ''),
+    email:               String(backendUser.email ?? ''),
+    avatar:              undefined,
+    // Profile fields — present after signup via extras, otherwise 0/defaults
+    age:                 Number((extras?.profile as Record<string,unknown>)?.age   ?? backendUser.age    ?? 0),
+    gender:              ((extras?.profile as Record<string,unknown>)?.gender ?? backendUser.gender ?? 'other') as User['gender'],
+    height:              Number((extras?.profile as Record<string,unknown>)?.height ?? backendUser.height ?? 0),
+    weight:              Number((extras?.profile as Record<string,unknown>)?.weight ?? backendUser.weight ?? 0),
+    fitnessLevel:        'beginner', // derived from activity_level if needed
+    objectives:          [],         // populated below
+    dietaryRestrictions: (extras?.profile as Record<string,unknown>)?.allergies as string[] ?? [],
+    medicalConditions:   (extras?.profile as Record<string,unknown>)?.health_conditions as string[] ?? [],
+    createdAt:           String(backendUser.created_at ?? new Date().toISOString()),
+    updatedAt:           String(backendUser.updated_at ?? new Date().toISOString()),
+  }
+}
+
+// ── Context type ──────────────────────────────────────────────────────────────
 
 interface AuthContextType {
-  user: User | null
-  isLoading: boolean
+  user:       User | null
+  isLoading:  boolean
   isLoggedIn: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string, username: string) => Promise<void>
-  completeProfile: (profileData: Partial<User>) => Promise<void>
-  logout: () => Promise<void>
-  updateUser: (data: Partial<User>) => Promise<void>
+  login:      (email: string, password: string) => Promise<void>
+  logout:     () => void
+  updateUser: (data: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// ── Provider ──────────────────────────────────────────────────────────────────
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser]         = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Initialize user from localStorage
+  // Rehydrate from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch (error) {
-        console.error('Failed to parse stored user:', error)
-        localStorage.removeItem('user')
-      }
+    try {
+      const stored = localStorage.getItem('user')
+      if (stored) setUser(JSON.parse(stored))
+    } catch {
+      clearSession()
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }, [])
 
+  // ── Login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
-    // Mock login - in a real app, this would call an API
-    const mockUser: User = {
-      id: '1',
-      username: email.split('@')[0],
-      email,
-      avatar: undefined,
-      age: 25,
-      gender: 'male',
-      height: 180,
-      weight: 75,
-      fitnessLevel: 'intermediate',
-      objectives: [],
-      dietaryRestrictions: [],
-      medicalConditions: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    
-    setUser(mockUser)
-    localStorage.setItem('user', JSON.stringify(mockUser))
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) throw new Error(data?.error ?? 'Login failed')
+
+    const { access_token, user: backendUser } = data
+    const mapped = mapBackendUser(backendUser)
+
+    saveSession(access_token, mapped)
+    setUser(mapped)
   }, [])
 
-  const signup = useCallback(async (email: string, password: string, username: string): Promise<User> => {
-    // Mock signup - in a real app, this would call an API
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      username,
-      email,
-      avatar: undefined,
-      age: 0,
-      gender: 'other',
-      height: 0,
-      weight: 0,
-      fitnessLevel: 'beginner',
-      objectives: [],
-      dietaryRestrictions: [],
-      medicalConditions: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    
-    setUser(newUser)
-    localStorage.setItem('user', JSON.stringify(newUser))
-    return newUser
-  }, [])
-
-  const completeProfile = useCallback(async (profileData: Partial<User>) => {
-    // Use the current user from state or create from profileData
-    const currentUser = user || (profileData as User)
-    if (!currentUser) throw new Error('No user data to complete profile')
-    
-    const updatedUser = {
-      ...currentUser,
-      ...profileData,
-      updatedAt: new Date().toISOString(),
-    }
-    
-    setUser(updatedUser)
-    localStorage.setItem('user', JSON.stringify(updatedUser))
-  }, [user])
-
-  const logout = useCallback(async () => {
+  // ── Logout ────────────────────────────────────────────────────────────────
+  const logout = useCallback(() => {
+    clearSession()
     setUser(null)
-    localStorage.removeItem('user')
   }, [])
 
-  const updateUser = useCallback(async (data: Partial<User>) => {
-    if (!user) throw new Error('No user logged in')
-    
-    const updatedUser = {
-      ...user,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    }
-    
-    setUser(updatedUser)
-    localStorage.setItem('user', JSON.stringify(updatedUser))
-  }, [user])
+  // ── Update local user (e.g. after profile edits) ──────────────────────────
+  const updateUser = useCallback((data: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev
+      const updated = { ...prev, ...data, updatedAt: new Date().toISOString() }
+      localStorage.setItem('user', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isLoggedIn: !!user,
-        login,
-        signup,
-        completeProfile,
-        logout,
-        updateUser,
-      }}
-    >
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      isLoggedIn: !!user,
+      login,
+      logout,
+      updateUser,
+    }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider')
+  return ctx
 }

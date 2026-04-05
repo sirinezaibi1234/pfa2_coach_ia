@@ -37,16 +37,14 @@ export default function DashboardPage() {
 
         <div className="bg-card rounded-lg p-6 border border-border shadow-sm">
           <p className="text-muted-foreground text-sm mb-2">Fitness Level</p>
-          <p className="text-3xl font-bold text-foreground capitalize">{user.fitnessLevel[0]}</p>
-          <p className="text-xs text-muted-foreground mt-2 capitalize">{user.fitnessLevel}</p>
+          <p className="text-3xl font-bold text-foreground capitalize">{user.fitnessLevel ?? '—'}</p>
         </div>
 
         <div className="bg-card rounded-lg p-6 border border-border shadow-sm">
-          <p className="text-muted-foreground text-sm mb-2">Active Goals</p>
-          <p className="text-3xl font-bold text-foreground">{user.objectives.length}</p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {user.objectives.length === 1 ? 'goal' : 'goals'}
-          </p>
+         <p className="text-3xl font-bold text-foreground">{user.objectives?.length ?? 0}</p>
+         <p className="text-xs text-muted-foreground mt-2">
+  {user.objectives?.length === 1 ? 'goal' : 'goals'}
+</p>
         </div>
       </div>
 
@@ -106,7 +104,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Your Goals */}
-      {user.objectives.length > 0 && (
+      
+      {(user.objectives?.length ?? 0) > 0 && (
         <div className="bg-card rounded-lg border border-border p-6">
           <h2 className="text-xl font-bold text-foreground mb-4">Your Fitness Goals</h2>
           <div className="space-y-2">
