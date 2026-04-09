@@ -43,12 +43,16 @@ def create_app():
     from app.routes.profile import profile_bp
     from app.routes.programme import programme_bp
     from app.routes.ai import ai_bp
+    from app.routes.nutition import nutrition_bp
+    from app.routes.water import water_bp
 
     app.register_blueprint(auth_bp,      url_prefix="/api/auth")
     app.register_blueprint(users_bp,     url_prefix="/api/users")
     app.register_blueprint(profile_bp,   url_prefix="/api/profile")
     app.register_blueprint(programme_bp, url_prefix="/api/programme")
     app.register_blueprint(ai_bp,        url_prefix="/api/ai")
+    app.register_blueprint(nutrition_bp, url_prefix="/api/nutrition")
+    app.register_blueprint(water_bp,     url_prefix="/api")
 
     # Create tables
     with app.app_context():
@@ -56,6 +60,8 @@ def create_app():
         from app.models.user_profile import UserProfile
         from app.models.objective import Objective
         from app.models.programme import Programme, ProgressLog
+        from app.models.meal import Meal
+        from app.models.water_log import WaterLog
 
         db.create_all()
 

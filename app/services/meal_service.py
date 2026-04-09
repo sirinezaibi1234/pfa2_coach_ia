@@ -34,3 +34,7 @@ class MealService:
         meal = Meal.query.filter_by(id=meal_id, user_id=user_id).first_or_404()
         db.session.delete(meal)
         db.session.commit()
+    def get_by_id(user_id: int, meal_id: int):
+        return Meal.query.filter_by(id=meal_id, user_id=user_id).first()
+    
+    
