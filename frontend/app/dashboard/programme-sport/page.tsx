@@ -8,15 +8,18 @@ import { Card } from '@/components/ui/card'
 import {
   AlertCircle, Download, RefreshCw,
   Calendar, CheckCircle, Dumbbell,
-  TrendingUp, Sliders, X,
+  TrendingUp, Sliders, X, Flame, Activity,
 } from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Exercise {
-  name?: string
+  'Name of Exercise'?: string
   sets?: number
   reps?: number
+  burns_cal?: number
+  muscle?: string
+  benefit?: string
   duration?: string
   [key: string]: unknown
 }
@@ -57,19 +60,72 @@ interface Programme {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const DAY_ORDER      = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const DAY_SHORT      = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const DAY_ORDER         = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const DAY_SHORT         = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const ALL_WORKOUT_TYPES = ['Cardio', 'HIIT', 'Strength', 'Yoga']
-const DIFFICULTIES   = ['Beginner', 'Intermediate', 'Advanced']
+const DIFFICULTIES      = ['Beginner', 'Intermediate', 'Advanced']
 
 function intensityColor(difficulty: string) {
   if (difficulty === 'Advanced')     return 'bg-destructive/20 text-destructive'
-  if (difficulty === 'Intermediate') return 'bg-primary/20 text-primary'
+  if (difficulty === 'Intermediate') return 'bg-blue-100 text-blue-800'
   return 'bg-secondary/20 text-secondary-foreground'
 }
 
 function goalLabel(goal: string) {
   return goal.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+// ── Exercise Card ─────────────────────────────────────────────────────────────
+
+function ExerciseCard({ ex, difficulty, index }: { ex: Exercise; difficulty: string; index: number }) {
+  const name     = ex['Name of Exercise'] ?? `Exercise ${index + 1}`
+  const calories = ex.burns_cal ? Math.round(ex.burns_cal) : null
+
+  return (
+    <div className="bg-background border border-border rounded-xl p-4 flex flex-col gap-3 hover:border-primary/30 transition-colors">
+
+      {/* Top row: name + difficulty badge */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-medium text-foreground text-[15px] leading-snug">{name}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {ex.sets} sets × {ex.reps} reps
+            {ex.duration ? ` · ${ex.duration}` : ''}
+          </p>
+        </div>
+        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium ${intensityColor(difficulty)}`}>
+          {difficulty}
+        </span>
+      </div>
+
+      {/* Chips: muscle group + calories */}
+      <div className="flex flex-wrap gap-2">
+        {ex.muscle && (
+          <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground bg-muted px-2.5 py-1 rounded-full border border-border">
+            <Activity size={11} className="shrink-0" />
+            {ex.muscle}
+          </div>
+        )}
+        {calories !== null && (
+          <div
+            className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1 rounded-full border"
+            style={{ background: '#EAF3DE', borderColor: '#97C459', color: '#27500A' }}
+          >
+            <Flame size={11} className="shrink-0" />
+            {calories} kcal
+          </div>
+        )}
+      </div>
+
+      {/* Benefit */}
+      {ex.benefit && (
+        <p className="text-[12px] text-muted-foreground leading-relaxed border-l-2 border-primary/40 pl-2.5">
+          {ex.benefit}
+        </p>
+      )}
+
+    </div>
+  )
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -85,12 +141,10 @@ export default function TrainingProgramPage() {
   const [expanded, setExpanded]     = useState<string | null>(null)
   const [showAdjust, setShowAdjust] = useState(false)
 
-  // ── Adjust state ───────────────────────────────────────────────────────────
-  const [adjDifficulty, setAdjDifficulty]           = useState('Beginner')
-  const [adjAvailableDays, setAdjAvailableDays]     = useState<string[]>([])
-  const [adjExcludedTypes, setAdjExcludedTypes]     = useState<string[]>([])
+  const [adjDifficulty, setAdjDifficulty]       = useState('Beginner')
+  const [adjAvailableDays, setAdjAvailableDays] = useState<string[]>([])
+  const [adjExcludedTypes, setAdjExcludedTypes] = useState<string[]>([])
 
-  // ── Fetch existing programme on mount ─────────────────────────────────────
   const fetchProgramme = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -99,9 +153,7 @@ export default function TrainingProgramPage() {
       setProgramme(data.programme)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
-      if (!msg.includes('404') && !msg.includes('No active programme')) {
-        setError(msg)
-      }
+      if (!msg.includes('404') && !msg.includes('No active programme')) setError(msg)
     } finally {
       setLoading(false)
     }
@@ -109,7 +161,6 @@ export default function TrainingProgramPage() {
 
   useEffect(() => { fetchProgramme() }, [fetchProgramme])
 
-  // Sync adjust panel state when programme loads
   useEffect(() => {
     if (!programme) return
     const pd = programme.programme_data
@@ -118,94 +169,64 @@ export default function TrainingProgramPage() {
     setAdjExcludedTypes(pd.excluded_workout_types ?? [])
   }, [programme])
 
-  // ── Generate ──────────────────────────────────────────────────────────────
   const generateProgramme = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     try {
       const data = await api.post<{ programme: Programme }>('/programme/generate')
-      setProgramme(data.programme)
-      setShowAdjust(false)
+      setProgramme(data.programme); setShowAdjust(false)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate programme')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
-  // ── Confirm ───────────────────────────────────────────────────────────────
   const confirmProgramme = async () => {
-    setConfirming(true)
-    setError(null)
+    setConfirming(true); setError(null)
     try {
       const data = await api.post<{ programme: Programme }>('/programme/confirm')
       setProgramme(data.programme)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to confirm programme')
-    } finally {
-      setConfirming(false)
-    }
+    } finally { setConfirming(false) }
   }
 
-  // ── Adjust ────────────────────────────────────────────────────────────────
   const adjustProgramme = async () => {
-    if (adjAvailableDays.length === 0) {
-      setError('Please select at least one training day.')
-      return
-    }
-    setAdjusting(true)
-    setError(null)
+    if (adjAvailableDays.length === 0) { setError('Please select at least one training day.'); return }
+    setAdjusting(true); setError(null)
     try {
       const data = await api.patch<{ programme: Programme }>('/programme/adjust', {
         difficulty_override:    adjDifficulty,
         available_days:         adjAvailableDays,
         excluded_workout_types: adjExcludedTypes,
       })
-      setProgramme(data.programme)
-      setShowAdjust(false)
+      setProgramme(data.programme); setShowAdjust(false)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to adjust programme')
-    } finally {
-      setAdjusting(false)
-    }
+    } finally { setAdjusting(false) }
   }
 
-  // ── Toggle helpers ─────────────────────────────────────────────────────────
-  const toggleDay = (day: string) => {
-    setAdjAvailableDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    )
-  }
+  const toggleDay  = (day: string)  => setAdjAvailableDays(p => p.includes(day)  ? p.filter(d => d !== day)  : [...p, day])
+  const toggleType = (type: string) => setAdjExcludedTypes(p => p.includes(type) ? p.filter(t => t !== type) : [...p, type])
 
-  const toggleWorkoutType = (type: string) => {
-    setAdjExcludedTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    )
-  }
-
-  // ── CSV download ──────────────────────────────────────────────────────────
   const downloadCSV = () => {
     if (!programme) return
     const sched = programme.programme_data.weekly_schedule
     let csv = `Programme: ${goalLabel(programme.goal)}\nDifficulty: ${programme.difficulty}\n\n`
-    csv += 'Day,Type,Exercise,Sets,Reps\n'
+    csv += 'Day,Type,Exercise,Sets,Reps,Calories,Muscle,Benefit\n'
     DAY_ORDER.forEach(day => {
       const d = sched[day]
       if (!d) return
       if (d.type === 'rest') {
-        csv += `${day},Rest,,,\n`
+        csv += `${day},Rest,,,,,,\n`
       } else {
         d.exercises?.forEach(ex => {
-          csv += `${day},${d.workout},${ex.name ?? ''},${ex.sets ?? ''},${ex.reps ?? ''}\n`
+          csv += `${day},${d.workout},${ex['Name of Exercise'] ?? ''},${ex.sets ?? ''},${ex.reps ?? ''},${ex.burns_cal ?? ''},${ex.muscle ?? ''},${ex.benefit ?? ''}\n`
         })
       }
     })
     const blob = new Blob([csv], { type: 'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href = url
-    a.download = 'training-programme.csv'
-    a.click()
+    a.href = url; a.download = 'training-programme.csv'; a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -314,7 +335,6 @@ export default function TrainingProgramPage() {
                 </div>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-2 gap-4 mt-6 max-w-xs">
                 {[
                   { label: 'Workout days', value: pd.summary.days_per_week },
@@ -328,40 +348,33 @@ export default function TrainingProgramPage() {
               </div>
             </Card>
 
-            {/* ── Adjust Panel ────────────────────────────────────────────── */}
+            {/* Adjust Panel */}
             {showAdjust && isPending && (
               <Card className="p-6 border-primary/30 space-y-6">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   <Sliders size={18} /> Customize Your Program
                 </h3>
 
-                {/* 1. Difficulty */}
                 <div>
                   <p className="text-sm font-medium text-foreground mb-2">Difficulty level</p>
                   <div className="flex gap-2 flex-wrap">
                     {DIFFICULTIES.map(d => (
-                      <button
-                        key={d}
-                        onClick={() => setAdjDifficulty(d)}
+                      <button key={d} onClick={() => setAdjDifficulty(d)}
                         className={`px-4 py-1.5 rounded-full text-sm border transition-all ${
                           adjDifficulty === d
                             ? 'bg-primary text-primary-foreground border-primary'
                             : 'border-border text-muted-foreground hover:border-primary hover:text-foreground'
-                        }`}
-                      >
+                        }`}>
                         {d}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* 2. Available days */}
                 <div>
                   <p className="text-sm font-medium text-foreground mb-1">
                     Training days
-                    <span className="ml-2 text-xs text-muted-foreground font-normal">
-                      ({adjAvailableDays.length} selected)
-                    </span>
+                    <span className="ml-2 text-xs text-muted-foreground font-normal">({adjAvailableDays.length} selected)</span>
                   </p>
                   <p className="text-xs text-muted-foreground mb-3">
                     Choose the days you&apos;re available to train. Rest days are set automatically.
@@ -370,19 +383,14 @@ export default function TrainingProgramPage() {
                     {DAY_ORDER.map((day, i) => {
                       const selected = adjAvailableDays.includes(day)
                       return (
-                        <button
-                          key={day}
-                          onClick={() => toggleDay(day)}
+                        <button key={day} onClick={() => toggleDay(day)}
                           className={`w-12 h-12 rounded-xl text-xs font-medium border transition-all flex flex-col items-center justify-center gap-0.5 ${
                             selected
                               ? 'bg-primary text-primary-foreground border-primary'
                               : 'border-border text-muted-foreground hover:border-primary hover:text-foreground bg-background'
-                          }`}
-                        >
+                          }`}>
                           <span>{DAY_SHORT[i]}</span>
-                          {selected && (
-                            <span className="text-[9px] opacity-80">✓</span>
-                          )}
+                          {selected && <span className="text-[9px] opacity-80">✓</span>}
                         </button>
                       )
                     })}
@@ -392,11 +400,8 @@ export default function TrainingProgramPage() {
                   )}
                 </div>
 
-                {/* 3. Exclude workout types */}
                 <div>
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    Workout preferences
-                  </p>
+                  <p className="text-sm font-medium text-foreground mb-1">Workout preferences</p>
                   <p className="text-xs text-muted-foreground mb-3">
                     Deselect any workout type you want to avoid. We&apos;ll replace it with an alternative.
                   </p>
@@ -404,15 +409,12 @@ export default function TrainingProgramPage() {
                     {ALL_WORKOUT_TYPES.map(type => {
                       const excluded = adjExcludedTypes.includes(type)
                       return (
-                        <button
-                          key={type}
-                          onClick={() => toggleWorkoutType(type)}
+                        <button key={type} onClick={() => toggleType(type)}
                           className={`px-4 py-1.5 rounded-full text-sm border transition-all ${
                             excluded
                               ? 'bg-destructive/10 text-destructive border-destructive/40 line-through'
                               : 'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20'
-                          }`}
-                        >
+                          }`}>
                           {type}
                         </button>
                       )
@@ -425,21 +427,13 @@ export default function TrainingProgramPage() {
                   )}
                 </div>
 
-                {/* Apply button */}
                 <div className="flex gap-3 pt-2 border-t border-border">
-                  <Button
-                    onClick={adjustProgramme}
-                    disabled={adjusting || adjAvailableDays.length === 0}
-                  >
-                    {adjusting ? (
-                      <><RefreshCw className="mr-2 animate-spin" size={16} />Applying…</>
-                    ) : (
-                      <><CheckCircle className="mr-2" size={16} />Apply changes</>
-                    )}
+                  <Button onClick={adjustProgramme} disabled={adjusting || adjAvailableDays.length === 0}>
+                    {adjusting
+                      ? <><RefreshCw className="mr-2 animate-spin" size={16} />Applying…</>
+                      : <><CheckCircle className="mr-2" size={16} />Apply changes</>}
                   </Button>
-                  <Button variant="ghost" onClick={() => setShowAdjust(false)}>
-                    Cancel
-                  </Button>
+                  <Button variant="ghost" onClick={() => setShowAdjust(false)}>Cancel</Button>
                 </div>
               </Card>
             )}
@@ -454,6 +448,8 @@ export default function TrainingProgramPage() {
                   const d = pd.weekly_schedule[day]
                   if (!d) return null
                   const isRest = d.type === 'rest'
+                  const totalCal = d.exercises?.reduce((sum, ex) => sum + (ex.burns_cal ?? 0), 0)
+
                   return (
                     <Card key={day} className="overflow-hidden">
                       <button
@@ -469,27 +465,32 @@ export default function TrainingProgramPage() {
                           </span>
                         </div>
                         {!isRest && (
-                          <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                            {d.exercises?.length ?? 0} exercises
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {!!totalCal && (
+                              <span
+                                className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full"
+                                style={{ background: '#EAF3DE', color: '#27500A' }}
+                              >
+                                <Flame size={11} />
+                                {Math.round(totalCal)} kcal
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                              {d.exercises?.length ?? 0} exercises
+                            </span>
+                          </div>
                         )}
                       </button>
 
                       {!isRest && expanded === day && d.exercises && (
-                        <div className="border-t border-border divide-y divide-border">
+                        <div className="border-t border-border p-4 grid gap-3 sm:grid-cols-2">
                           {d.exercises.map((ex, i) => (
-                            <div key={i} className="p-4 flex items-center justify-between hover:bg-muted/30 transition">
-                              <div>
-                                <p className="font-medium text-foreground">{ex.name ?? `Exercise ${i + 1}`}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {ex.sets} sets × {ex.reps} reps
-                                  {ex.duration ? ` (${ex.duration})` : ''}
-                                </p>
-                              </div>
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${intensityColor(programme.difficulty)}`}>
-                                {programme.difficulty}
-                              </span>
-                            </div>
+                            <ExerciseCard
+                              key={i}
+                              ex={ex}
+                              difficulty={programme.difficulty}
+                              index={i}
+                            />
                           ))}
                         </div>
                       )}
