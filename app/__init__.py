@@ -42,12 +42,14 @@ def create_app():
     from app.routes.users import users_bp
     from app.routes.profile import profile_bp
     from app.routes.programme import programme_bp
+    from app.routes.training import training_bp
     from app.routes.ai import ai_bp
 
     app.register_blueprint(auth_bp,      url_prefix="/api/auth")
     app.register_blueprint(users_bp,     url_prefix="/api/users")
     app.register_blueprint(profile_bp,   url_prefix="/api/profile")
     app.register_blueprint(programme_bp, url_prefix="/api/programme")
+    app.register_blueprint(training_bp,  url_prefix="/api/training")
     app.register_blueprint(ai_bp,        url_prefix="/api/ai")
 
     # Create tables
@@ -56,6 +58,7 @@ def create_app():
         from app.models.user_profile import UserProfile
         from app.models.objective import Objective
         from app.models.programme import Programme, ProgressLog
+        from app.models.training_session import TrainingSession
 
         db.create_all()
 
