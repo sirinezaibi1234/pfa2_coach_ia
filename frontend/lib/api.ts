@@ -16,7 +16,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   })
 
-  // 🔥 ALWAYS read as text first (prevents crash)
+  
   const text = await res.text()
 
   let data: any
@@ -25,12 +25,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     data = JSON.parse(text)
   } catch (err) {
     console.error('❌ Non-JSON response from backend:')
-    console.error(text) // 🔥 THIS shows the real problem (HTML error page)
+    console.error(text) 
 
     throw new Error(`Server returned non-JSON response (status ${res.status})`)
   }
 
-  // 🔥 Handle HTTP errors AFTER parsing safely
+  
   if (!res.ok) {
     console.error('❌ API Error:', data)
     throw new Error(data?.error || `Request failed: ${res.status}`)

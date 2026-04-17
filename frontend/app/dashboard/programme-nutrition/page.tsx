@@ -1,404 +1,493 @@
 'use client'
 
-import { useState } from 'react'
-import { useAuth } from '@/lib/auth-context'
+import { useState, useEffect } from 'react'
+import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Download, RefreshCw, Calendar, Flame } from 'lucide-react'
+import {
+  RefreshCw,
+  Download,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Flame,
+  Utensils,
+  AlertCircle,
+  Clock,
+} from 'lucide-react'
 
-interface Meal {
-  name: string
-  time: string
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-  items: string[]
-  notes?: string
+// ── Backend response types ────────────────────────────────────────────────────
+
+interface BackendMeal {
+  Food_Items?:  string | string[]
+  Calories:    number
+  Protein:     number
+  Carbs:       number
+  Fat:         number
+  Meal_Type?:  string
+  Diet_Type?:  string
 }
 
-interface DailyPlan {
-  day: string
-  meals: Meal[]
-  totalCalories: number
-  totalProtein: number
-  totalCarbs: number
-  totalFat: number
+interface DailyMeals {
+  breakfast?: BackendMeal
+  lunch?:     BackendMeal
+  dinner?:    BackendMeal
+  snack?:     BackendMeal
 }
 
-interface NutritionProgram {
-  id: string
-  name: string
-  duration: string
-  goal: string
-  dailyCalories: number
-  generatedAt: string
-  plan: DailyPlan[]
+interface ProgrammeData {
+  goal:              string
+  difficulty:        string
+  calorie_target:    number
+  tdee:              number
+  diet_preference:   string
+  daily_meals:       DailyMeals
+  bmi:               number
+  summary: {
+    days_per_week:           number
+    calorie_target:          number
+    difficulty_level:        string
+    expected_monthly_change: number
+    metric:                  string
+  }
 }
+
+interface Programme {
+  id:              number
+  status:          'pending_confirmation' | 'active' | 'confirmed' | 'archived'
+  goal:            string
+  difficulty:      string
+  diet_preference: string
+  calorie_target:  number
+  tdee:            number
+  programme_data:  ProgrammeData
+  created_at:      string
+  confirmed_at:    string | null
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const MEAL_TIMES: Record<string, string> = {
+  breakfast: '7:00 AM',
+  lunch:     '12:30 PM',
+  dinner:    '7:00 PM',
+  snack:     '3:30 PM',
+}
+
+const MEAL_EMOJIS: Record<string, string> = {
+  breakfast: '🌅',
+  lunch:     '☀️',
+  dinner:    '🌙',
+  snack:     '🍎',
+}
+
+const GOAL_LABELS: Record<string, string> = {
+  lose_weight:       'Weight Loss',
+  gain_muscle:       'Muscle Gain',
+  maintain_weight:   'Maintenance',
+  improve_endurance: 'Endurance',
+}
+
+function parseFoodItems(raw: string | string[] | undefined | null): string[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.filter(Boolean)
+  return raw
+    .split(/[,;|]+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+}
+
+function formatGoal(goal: string): string {
+  return GOAL_LABELS[goal] ?? goal.replace(/_/g, ' ')
+}
+
+function totalMacros(meals: DailyMeals) {
+  const all = Object.values(meals).filter(Boolean) as BackendMeal[]
+  return {
+    calories: all.reduce((s, m) => s + (m.Calories ?? 0), 0),
+    protein:  all.reduce((s, m) => s + (m.Protein  ?? 0), 0),
+    carbs:    all.reduce((s, m) => s + (m.Carbs    ?? 0), 0),
+    fat:      all.reduce((s, m) => s + (m.Fat      ?? 0), 0),
+  }
+}
+
+function convertToCSV(prog: Programme): string {
+  const { programme_data: pd } = prog
+  const meals = pd.daily_meals
+
+  let csv = `Nutrition Programme\n`
+  csv += `Goal,${formatGoal(prog.goal)}\n`
+  csv += `Diet,${prog.diet_preference}\n`
+  csv += `Calorie Target,${prog.calorie_target} kcal\n`
+  csv += `TDEE,${prog.tdee} kcal\n`
+  csv += `Difficulty,${prog.difficulty}\n\n`
+  csv += `Meal,Time,Calories,Protein(g),Carbs(g),Fat(g),Foods\n`
+
+  for (const [type, meal] of Object.entries(meals)) {
+    if (!meal) continue
+    const items = parseFoodItems(meal.Food_Items).join(' | ')
+    csv += `${type},${MEAL_TIMES[type] ?? ''},${meal.Calories},${meal.Protein},${meal.Carbs},${meal.Fat},"${items}"\n`
+  }
+
+  const t = totalMacros(meals)
+  csv += `\nDAILY TOTALS,,${t.calories},${t.protein},${t.carbs},${t.fat}\n`
+  return csv
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function MacroBar({ label, value, unit, color }: {
+  label: string; value: number; unit: string; color: string
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className={`text-2xl font-bold ${color}`}>{value}<span className="text-sm font-normal ml-1">{unit}</span></span>
+    </div>
+  )
+}
+
+function MealCard({ mealType, meal }: { mealType: string; meal: BackendMeal }) {
+  const [open, setOpen] = useState(false)
+  const foods = parseFoodItems(meal.Food_Items)
+
+  return (
+    <div className="border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-colors">
+      {/* Header row */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between p-4 hover:bg-muted/40 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{MEAL_EMOJIS[mealType] ?? '🍽️'}</span>
+          <div>
+            <p className="font-semibold capitalize text-foreground">{mealType}</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock size={11} /> {MEAL_TIMES[mealType] ?? ''}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* Macro pills */}
+          <div className="hidden sm:flex gap-2 text-xs">
+            <span className="bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full font-medium">P {meal.Protein}g</span>
+            <span className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full font-medium">C {meal.Carbs}g</span>
+            <span className="bg-rose-500/10 text-rose-500 px-2 py-0.5 rounded-full font-medium">F {meal.Fat}g</span>
+          </div>
+          <span className="text-sm font-bold text-primary">{meal.Calories} kcal</span>
+          {open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+        </div>
+      </button>
+
+      {/* Expanded detail */}
+      {open && (
+        <div className="px-4 pb-4 border-t border-border bg-muted/20">
+          {/* Mobile macros */}
+          <div className="flex sm:hidden gap-3 py-3 text-xs border-b border-border mb-3">
+            <span className="bg-blue-500/10 text-blue-500 px-2 py-1 rounded font-medium">Protein {meal.Protein}g</span>
+            <span className="bg-amber-500/10 text-amber-500 px-2 py-1 rounded font-medium">Carbs {meal.Carbs}g</span>
+            <span className="bg-rose-500/10 text-rose-500 px-2 py-1 rounded font-medium">Fat {meal.Fat}g</span>
+          </div>
+
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-3 mb-2">
+            <Utensils size={11} className="inline mr-1" />Foods
+          </p>
+          <ul className="space-y-1.5">
+            {foods.map((item, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                <span className="text-primary mt-0.5">•</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function NutritionProgramPage() {
-  const { user } = useAuth()
-  const [program, setProgram] = useState<NutritionProgram | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [expanded, setExpanded] = useState<string | null>(null)
+  const [programme, setProgramme] = useState<Programme | null>(null)
+  const [loading,   setLoading]   = useState(false)
+  const [fetching,  setFetching]  = useState(true)
+  const [error,     setError]     = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
 
-  // Mock AI-generated nutrition program
-  const mockPrograms: NutritionProgram[] = [
-    {
-      id: '1',
-      name: 'Muscle Building Nutrition Plan',
-      duration: '12 weeks',
-      goal: 'Build lean muscle with adequate protein intake',
-      dailyCalories: 2800,
-      generatedAt: new Date().toLocaleDateString(),
-      plan: [
-        {
-          day: 'Monday',
-          meals: [
-            {
-              name: 'Breakfast',
-              time: '7:00 AM',
-              calories: 450,
-              protein: 35,
-              carbs: 50,
-              fat: 12,
-              items: [
-                'Oatmeal with berries (1 cup)',
-                '2 whole eggs + 3 egg whites',
-                'Banana',
-                'Almond butter (1 tbsp)',
-              ],
-              notes: 'High protein breakfast to start the day',
-            },
-            {
-              name: 'Mid-Morning Snack',
-              time: '10:00 AM',
-              calories: 250,
-              protein: 25,
-              carbs: 30,
-              fat: 5,
-              items: ['Greek yogurt (200g)', 'Granola (50g)', 'Honey (1 tbsp)'],
-              notes: 'Pre-workout snack',
-            },
-            {
-              name: 'Lunch',
-              time: '1:00 PM',
-              calories: 650,
-              protein: 50,
-              carbs: 70,
-              fat: 15,
-              items: [
-                'Grilled chicken breast (200g)',
-                'Brown rice (1 cup cooked)',
-                'Mixed vegetables',
-                'Olive oil (1 tbsp)',
-              ],
-              notes: 'Post-workout recovery meal',
-            },
-            {
-              name: 'Afternoon Snack',
-              time: '4:00 PM',
-              calories: 200,
-              protein: 20,
-              carbs: 20,
-              fat: 6,
-              items: ['Protein shake with banana', 'Almonds (30g)'],
-              notes: 'Energy boost before evening activities',
-            },
-            {
-              name: 'Dinner',
-              time: '7:00 PM',
-              calories: 600,
-              protein: 45,
-              carbs: 55,
-              fat: 18,
-              items: [
-                'Salmon fillet (200g)',
-                'Sweet potato (1 large)',
-                'Broccoli',
-                'Lemon & olive oil dressing',
-              ],
-              notes: 'Rich in omega-3s for recovery',
-            },
-            {
-              name: 'Evening Snack',
-              time: '9:30 PM',
-              calories: 150,
-              protein: 20,
-              carbs: 10,
-              fat: 4,
-              items: ['Casein protein (1 scoop)', 'Cottage cheese (100g)'],
-              notes: 'Slow-digesting protein before sleep',
-            },
-          ],
-          totalCalories: 2800,
-          totalProtein: 195,
-          totalCarbs: 235,
-          totalFat: 60,
-        },
-      ],
-    },
-  ]
+  // Load existing programme on mount
+  useEffect(() => {
+    loadExisting()
+  }, [])
 
-  const generateProgram = async () => {
+  async function loadExisting() {
+    setFetching(true)
+    setError(null)
+    try {
+      const res = await api.get<{ programme: Programme }>('/programme/me')
+      // Only show if it has nutrition data
+      if (res.programme.programme_data?.daily_meals) {
+        setProgramme(res.programme)
+      }
+    } catch {
+      // 404 = no programme yet — that's fine
+    } finally {
+      setFetching(false)
+    }
+  }
+
+  async function handleGenerate() {
     setLoading(true)
-    // Simulate API call to AI
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setProgram(mockPrograms[0])
-    setLoading(false)
+    setError(null)
+    try {
+      const res = await api.post<{ programme: Programme }>('/programme/generate')
+      setProgramme(res.programme)
+    } catch (e: any) {
+      setError(e.message ?? 'Failed to generate programme')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const downloadProgram = () => {
-    if (!program) return
-    const csv = convertToCSV(program)
+  async function handleConfirm() {
+    if (!programme) return
+    setConfirming(true)
+    setError(null)
+    try {
+      const res = await api.post<{ programme: Programme }>('/programme/confirm')
+      setProgramme(res.programme)
+    } catch (e: any) {
+      setError(e.message ?? 'Failed to confirm programme')
+    } finally {
+      setConfirming(false)
+    }
+  }
+
+  function handleDownload() {
+    if (!programme) return
+    const csv  = convertToCSV(programme)
     const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${program.name}.csv`
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `nutrition-plan-${programme.goal}.csv`
     a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const convertToCSV = (prog: NutritionProgram) => {
-    let csv = `Nutrition Program: ${prog.name}\n`
-    csv += `Duration: ${prog.duration}\nGoal: ${prog.goal}\nDaily Calories: ${prog.dailyCalories}\n\n`
+  // ── Derived display values ────────────────────────────────────────────────
+  const pd     = programme?.programme_data
+  const meals  = pd?.daily_meals ?? {}
+  const totals = totalMacros(meals)
+  const mealEntries = Object.entries(meals).filter(([, v]) => Boolean(v)) as [string, BackendMeal][]
 
-    prog.plan.forEach(day => {
-      csv += `${day.day}\n`
-      csv += 'Meal,Time,Calories,Protein(g),Carbs(g),Fat(g),Items\n'
-      day.meals.forEach(meal => {
-        csv += `${meal.name},${meal.time},${meal.calories},${meal.protein},${meal.carbs},${meal.fat},"${meal.items.join('; ')}"\n`
-      })
-      csv += `Daily Totals,,,${day.totalProtein},${day.totalCarbs},${day.totalFat}\n\n`
-    })
+  const isPending = programme?.status === 'pending_confirmation'
+  const isActive  = programme?.status === 'active' || programme?.status === 'confirmed'
 
-    return csv
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  if (fetching) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <RefreshCw className="animate-spin text-primary" size={32} />
+      </div>
+    )
   }
 
   return (
     <div className="flex-1 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
+      <div className="max-w-4xl mx-auto">
+
+        {/* Page header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">AI Nutrition Program</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-1">AI Nutrition Programme</h1>
           <p className="text-muted-foreground">
-            Personalized meal plans generated by our AI based on your fitness goals and dietary
-            preferences
+            Personalised daily meal plan generated from your profile and fitness goal.
           </p>
         </div>
 
-        {!program ? (
-          <Card className="p-8 text-center">
-            <AlertCircle className="mx-auto mb-4 text-primary" size={48} />
-            <h2 className="text-xl font-semibold mb-2">No Program Generated Yet</h2>
-            <p className="text-muted-foreground mb-6">
-              Click the button below to generate a personalized nutrition program based on your
-              fitness goals, dietary restrictions, and health profile.
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg px-4 py-3 mb-6 text-sm">
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+
+        {/* ── Empty state ── */}
+        {!programme && (
+          <Card className="p-10 text-center">
+            <Utensils className="mx-auto mb-4 text-primary" size={48} />
+            <h2 className="text-xl font-semibold mb-2">No Nutrition Plan Yet</h2>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Generate a personalised daily meal plan based on your profile, goal, and dietary
+              preference. Make sure your profile and an active objective are set first.
             </p>
-            <Button
-              onClick={generateProgram}
-              disabled={loading}
-              size="lg"
-              className="bg-primary hover:bg-primary/90"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="mr-2 animate-spin" size={20} />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2" size={20} />
-                  Generate Program
-                </>
-              )}
+            <Button onClick={handleGenerate} disabled={loading} size="lg">
+              {loading
+                ? <><RefreshCw className="mr-2 animate-spin" size={18} />Generating…</>
+                : <><RefreshCw className="mr-2" size={18} />Generate Nutrition Plan</>}
             </Button>
           </Card>
-        ) : (
-          <div>
-            {/* Program Header */}
-            <Card className="p-6 mb-6 bg-gradient-to-r from-secondary/10 to-primary/10">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        )}
+
+        {/* ── Programme loaded ── */}
+        {programme && pd && (
+          <div className="space-y-6">
+
+            {/* Status / action banner */}
+            {isPending && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">{program.name}</h2>
-                  <p className="text-muted-foreground flex items-center gap-2">
-                    <Calendar size={16} />
-                    {program.duration} | Generated: {program.generatedAt}
+                  <p className="font-semibold text-amber-600 dark:text-amber-400">Review your plan</p>
+                  <p className="text-sm text-muted-foreground">
+                    This plan is pending confirmation. Check your meals below, then activate it.
                   </p>
                 </div>
-                <div className="flex gap-3">
-                  <Button onClick={generateProgram} variant="outline">
-                    <RefreshCw className="mr-2" size={18} />
-                    Regenerate
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" onClick={handleGenerate} disabled={loading || confirming} size="sm">
+                    {loading ? <RefreshCw className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+                    <span className="ml-1.5">Regenerate</span>
                   </Button>
-                  <Button onClick={downloadProgram} className="bg-secondary hover:bg-secondary/90">
-                    <Download className="mr-2" size={18} />
-                    Download
+                  <Button onClick={handleConfirm} disabled={confirming || loading} size="sm">
+                    {confirming
+                      ? <RefreshCw className="animate-spin mr-1.5" size={14} />
+                      : <CheckCircle className="mr-1.5" size={14} />}
+                    Confirm Plan
                   </Button>
                 </div>
               </div>
-              <p className="text-foreground font-medium mt-4">
-                Goal: {program.goal} | Daily Target: {program.dailyCalories} kcal
+            )}
+
+            {isActive && (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={18} className="text-green-500" />
+                  <div>
+                    <p className="font-semibold text-green-600 dark:text-green-400">Active plan</p>
+                    <p className="text-sm text-muted-foreground">
+                      Confirmed {programme.confirmed_at
+                        ? new Date(programme.confirmed_at).toLocaleDateString()
+                        : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleGenerate} disabled={loading} size="sm">
+                    {loading ? <RefreshCw className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+                    <span className="ml-1.5">New Plan</span>
+                  </Button>
+                  <Button variant="outline" onClick={handleDownload} size="sm">
+                    <Download size={14} className="mr-1.5" />Export CSV
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Flame size={15} className="text-orange-500" />
+                  <span className="text-xs text-muted-foreground">Calories</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">{pd.calorie_target}</p>
+                <p className="text-xs text-muted-foreground">target kcal/day</p>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">🎯</span>
+                  <span className="text-xs text-muted-foreground">Goal</span>
+                </div>
+                <p className="text-lg font-bold text-foreground leading-tight">
+                  {formatGoal(programme.goal)}
+                </p>
+                <p className="text-xs text-muted-foreground capitalize">{pd.difficulty}</p>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">🥗</span>
+                  <span className="text-xs text-muted-foreground">Diet</span>
+                </div>
+                <p className="text-lg font-bold text-foreground">{pd.diet_preference}</p>
+                <p className="text-xs text-muted-foreground">preference</p>
+              </Card>
+
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">⚡</span>
+                  <span className="text-xs text-muted-foreground">TDEE</span>
+                </div>
+                <p className="text-2xl font-bold text-foreground">{pd.tdee}</p>
+                <p className="text-xs text-muted-foreground">kcal maintenance</p>
+              </Card>
+            </div>
+
+            {/* Daily macro totals */}
+            <Card className="p-5">
+              <p className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">
+                Daily Macro Breakdown
               </p>
+              <div className="grid grid-cols-4 gap-6">
+                <MacroBar label="Calories" value={totals.calories} unit="kcal" color="text-orange-500" />
+                <MacroBar label="Protein"  value={totals.protein}  unit="g"    color="text-blue-500"   />
+                <MacroBar label="Carbs"    value={totals.carbs}    unit="g"    color="text-amber-500"  />
+                <MacroBar label="Fat"      value={totals.fat}      unit="g"    color="text-rose-500"   />
+              </div>
+              {/* Visual macro bar */}
+              <div className="mt-4 flex rounded-full overflow-hidden h-2 bg-muted">
+                {totals.calories > 0 && (() => {
+                  const pCal = totals.protein * 4
+                  const cCal = totals.carbs   * 4
+                  const fCal = totals.fat     * 9
+                  const tot  = pCal + cCal + fCal || 1
+                  return (
+                    <>
+                      <div style={{ width: `${(pCal/tot)*100}%` }} className="bg-blue-500"  />
+                      <div style={{ width: `${(cCal/tot)*100}%` }} className="bg-amber-500" />
+                      <div style={{ width: `${(fCal/tot)*100}%` }} className="bg-rose-500"  />
+                    </>
+                  )
+                })()}
+              </div>
+              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                <span><span className="text-blue-500 font-bold">■</span> Protein</span>
+                <span><span className="text-amber-500 font-bold">■</span> Carbs</span>
+                <span><span className="text-rose-500 font-bold">■</span> Fat</span>
+              </div>
             </Card>
 
-            {/* Macro Summary */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Flame size={18} className="text-destructive" />
-                  <span className="text-sm font-medium text-muted-foreground">Calories</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{program.dailyCalories}</p>
-                <p className="text-xs text-muted-foreground">kcal/day</p>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🍗</span>
-                  <span className="text-sm font-medium text-muted-foreground">Protein</span>
-                </div>
-                <p className="text-2xl font-bold text-primary">
-                  {program.plan[0]?.totalProtein || 0}g
-                </p>
-                <p className="text-xs text-muted-foreground">per day</p>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🌾</span>
-                  <span className="text-sm font-medium text-muted-foreground">Carbs</span>
-                </div>
-                <p className="text-2xl font-bold text-primary">
-                  {program.plan[0]?.totalCarbs || 0}g
-                </p>
-                <p className="text-xs text-muted-foreground">per day</p>
-              </Card>
-              <Card className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🥑</span>
-                  <span className="text-sm font-medium text-muted-foreground">Fat</span>
-                </div>
-                <p className="text-2xl font-bold text-secondary">
-                  {program.plan[0]?.totalFat || 0}g
-                </p>
-                <p className="text-xs text-muted-foreground">per day</p>
-              </Card>
-            </div>
-
-            {/* Daily Plans */}
-            <div className="grid gap-4">
-              {program.plan.map(day => (
-                <Card key={day.day} className="overflow-hidden">
-                  <button
-                    onClick={() => setExpanded(expanded === day.day ? null : day.day)}
-                    className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition"
-                  >
-                    <h3 className="font-semibold text-foreground text-lg">{day.day}</h3>
-                    <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                      {day.totalCalories} kcal | {day.meals.length} meals
-                    </span>
-                  </button>
-
-                  {expanded === day.day && (
-                    <div className="border-t border-border">
-                      {day.meals.map((meal, idx) => (
-                        <div
-                          key={idx}
-                          className="p-4 border-b border-border last:border-b-0 hover:bg-muted/30 transition"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <h4 className="font-semibold text-foreground">{meal.name}</h4>
-                              <p className="text-sm text-muted-foreground">{meal.time}</p>
-                            </div>
-                            <span className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded">
-                              {meal.calories} kcal
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-border">
-                            <div className="text-sm">
-                              <p className="text-muted-foreground text-xs">Protein</p>
-                              <p className="font-semibold text-foreground">{meal.protein}g</p>
-                            </div>
-                            <div className="text-sm">
-                              <p className="text-muted-foreground text-xs">Carbs</p>
-                              <p className="font-semibold text-foreground">{meal.carbs}g</p>
-                            </div>
-                            <div className="text-sm">
-                              <p className="text-muted-foreground text-xs">Fat</p>
-                              <p className="font-semibold text-foreground">{meal.fat}g</p>
-                            </div>
-                          </div>
-
-                          <div className="mb-3">
-                            <p className="text-sm font-medium text-foreground mb-2">Ingredients:</p>
-                            <ul className="text-sm text-muted-foreground space-y-1">
-                              {meal.items.map((item, i) => (
-                                <li key={i} className="flex items-center gap-2">
-                                  <span className="text-primary">•</span> {item}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          {meal.notes && (
-                            <p className="text-sm text-muted-foreground italic bg-muted/50 p-2 rounded">
-                              💡 {meal.notes}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-
-                      <div className="p-4 bg-muted/30 border-t border-border">
-                        <p className="text-sm font-semibold text-foreground mb-2">Daily Totals</p>
-                        <div className="grid grid-cols-4 gap-4">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Calories</p>
-                            <p className="font-bold text-foreground">{day.totalCalories} kcal</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Protein</p>
-                            <p className="font-bold text-primary">{day.totalProtein}g</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Carbs</p>
-                            <p className="font-bold text-primary">{day.totalCarbs}g</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Fat</p>
-                            <p className="font-bold text-secondary">{day.totalFat}g</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-
-            {/* Regenerate Button */}
-            <div className="mt-8 text-center">
-              <p className="text-muted-foreground mb-4">
-                Want a different meal plan? Generate a new nutrition program.
-              </p>
-              <Button
-                onClick={generateProgram}
-                disabled={loading}
-                size="lg"
-                variant="outline"
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw className="mr-2 animate-spin" size={20} />
-                    Generating...
-                  </>
+            {/* Meals */}
+            <div>
+              <h2 className="text-lg font-semibold text-foreground mb-3">
+                Daily Meals <span className="text-sm text-muted-foreground font-normal">({mealEntries.length} meals)</span>
+              </h2>
+              <div className="space-y-3">
+                {mealEntries.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No meal data available in this plan.</p>
                 ) : (
-                  <>
-                    <RefreshCw className="mr-2" size={20} />
-                    Generate New Program
-                  </>
+                  mealEntries.map(([type, meal]) => (
+                    <MealCard key={type} mealType={type} meal={meal} />
+                  ))
                 )}
-              </Button>
+              </div>
+            </div>
+
+            {/* Bottom actions */}
+            <div className="flex justify-between items-center pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground">
+                Generated {new Date(programme.created_at).toLocaleDateString()}
+              </p>
+              <div className="flex gap-2">
+                {isPending && (
+                  <Button variant="outline" size="sm" onClick={handleDownload}>
+                    <Download size={14} className="mr-1.5" />Export CSV
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
