@@ -2,8 +2,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services.meal_service import MealService
+from app.services.nutrition_service import NutritionService
 
 nutrition_bp = Blueprint("nutrition", __name__)
+service = NutritionService()
 
 @nutrition_bp.route("/meals", methods=["GET"])
 @jwt_required()
@@ -44,3 +46,25 @@ def get_detail_meal(meal_id):
     if not meal:
         return jsonify({"error": "Meal not found"}), 404
     return jsonify({"meal": meal.to_dict()}), 200
+
+# @nutrition_bp.route('/analyze-food', methods=['POST'])
+# def analyze_food():
+#     data = request.json
+#     food_name = data.get('food_name') # Ex: "100g avocado"
+    
+#     # 1. Optionnel : Vérifier d'abord en BDD (Postgres)
+#     # 2. Si non trouvé, appeler le service
+#     result = service.fetch_nutrition(food_name)
+    
+#     return jsonify(result), 200
+# @nutrition_bp.route('/test-edamam', methods=['POST'])
+# def test_edamam():
+#     data = request.json
+#     food_name = data.get('food_name')
+    
+#     # Appel direct au service (sans passer par la BDD pour l'instant)
+#     result = service.fetch_nutrition(food_name) 
+    
+#     if result:
+#         return jsonify(result), 200
+#     return jsonify({"error": "Erreur API"}), 400

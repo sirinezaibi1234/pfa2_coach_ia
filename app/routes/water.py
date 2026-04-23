@@ -6,7 +6,7 @@ from app.services.water_service import WaterService
 water_bp = Blueprint("water", __name__)
 
 
-@water_bp.route("/water", methods=["GET"])
+@water_bp.route("/", methods=["GET"], strict_slashes=False)
 @jwt_required()
 def get_water():
     """
@@ -24,7 +24,7 @@ def get_water():
     return jsonify(log.to_dict()), 200
 
 
-@water_bp.route("/water", methods=["PUT"])
+@water_bp.route("/", methods=["PUT"], strict_slashes=False)
 @jwt_required()
 def update_water():
     """

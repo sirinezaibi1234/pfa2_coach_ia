@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from app.routes.users import get_user
-from services.calorie_service import *
+from app.services.calorie_service import *
 
 calorie_bp = Blueprint('calorie', __name__)
 
