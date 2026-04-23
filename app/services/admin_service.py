@@ -4,8 +4,7 @@ from werkzeug.security import generate_password_hash
 
 # 📋 get users
 def get_all_users():
-    return User.query.all()
-
+    return User.query.filter_by(role='user').all()
 # ❌ delete user
 def delete_user(user_id):
     user = User.query.get(user_id)

@@ -3,6 +3,11 @@ from app.services.admin_service import *
 from app.services.auth_service import admin_required
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
+from app.services.profile_service import ObjectiveService
+from app.services.profile_service import ProfileService
+from app.models.user import User
+
+
 admin_bp = Blueprint("admin", __name__)
 
 # 📋 users
@@ -65,3 +70,21 @@ def stats():
 @jwt_required()
 def test():
     return {"user_id": get_jwt_identity()}
+
+@admin_bp.route("/users/<int:user_id>/profile", methods=["GET"])
+@jwt_required()
+def admin_get_user_profile(user_id):
+    """Admin only — get any user's profile + objective"""
+    current_id = int(get_jwt_identity())
+    current_user = User.query.get(current_id)
+
+    if not current_user or current_user.role != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    profile = ProfileService.get_profile(user_id)
+    objective = ObjectiveService.get_active_objective(user_id)
+
+    return jsonify({
+        "profile": profile.to_dict() if profile else None,
+        "objective": objective.to_dict() if objective else None,
+    }), 200
