@@ -90,8 +90,15 @@ class HuggingFaceClient:
     # 4. MODÈLE VISION (image + texte)
     #    équivalent de callVisionModel()
     # ─────────────────────────────────────────
-    def call_vision_model(self, image_bytes: bytes) -> str:
+    def call_vision_model(self, image_bytes: bytes, prompt: str | None = None) -> str:
         base64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+        final_prompt = prompt or (
+            "You are a nutrition expert. Describe this meal in detail: "
+            "identify all ingredients, estimate portion sizes, "
+            "and calculate approximate macronutrients "
+            "(calories, proteins, carbs, fats)."
+        )
 
         body = {
             "model": self.VISION_MODEL,
@@ -101,12 +108,7 @@ class HuggingFaceClient:
                     "content": [
                         {
                             "type": "text",
-                            "text": (
-                                "You are a nutrition expert. Describe this meal in detail: "
-                                "identify all ingredients, estimate portion sizes, "
-                                "and calculate approximate macronutrients "
-                                "(calories, proteins, carbs, fats)."
-                            )
+                            "text": final_prompt
                         },
                         {
                             "type": "image_url",

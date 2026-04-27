@@ -40,17 +40,27 @@ def generate():
 
     data      = request.get_json() or {}
     diet_pref = data.get("diet_preference", "Balanced")
+    training_days = data.get("training_days_per_week")
 
     VALID_DIETS = ["Vegan", "Vegetarian", "Paleo", "Keto", "Low-Carb", "Balanced"]
     if diet_pref not in VALID_DIETS:
         return jsonify({"error": f"diet_preference must be one of {VALID_DIETS}"}), 400
+
+    if training_days is not None:
+        try:
+            training_days = int(training_days)
+        except (TypeError, ValueError):
+            return jsonify({"error": "training_days_per_week must be an integer between 3 and 6"}), 400
+
+        if training_days < 3 or training_days > 6:
+            return jsonify({"error": "training_days_per_week must be between 3 and 6"}), 400
 
     # Archive any existing active programme
     old = Programme.query.filter_by(user_id=user.id, status="active").first()
     if old:
         old.status = "archived"
 
-    programme_data = generate_programme(profile, objective, diet_pref)
+    programme_data = generate_programme(profile, objective, diet_pref, training_days)
 
     prog = Programme(
         user_id         = user.id,
@@ -130,12 +140,25 @@ def adjust():
     objective  = Objective.query.filter_by(user_id=user.id, is_active=True).first()
     diet_pref  = data.get("diet_preference", prog.diet_preference)
     difficulty = data.get("difficulty", prog.difficulty)
+    training_days = data.get(
+        "training_days_per_week",
+        prog.programme_data.get("training_days_per_week") if prog.programme_data else None,
+    )
 
     VALID_DIFFS = ["Beginner", "Intermediate", "Advanced"]
     if difficulty not in VALID_DIFFS:
         return jsonify({"error": f"difficulty must be one of {VALID_DIFFS}"}), 400
 
-    new_data               = generate_programme(profile, objective, diet_pref)
+    if training_days is not None:
+        try:
+            training_days = int(training_days)
+        except (TypeError, ValueError):
+            return jsonify({"error": "training_days_per_week must be an integer between 3 and 6"}), 400
+
+        if training_days < 3 or training_days > 6:
+            return jsonify({"error": "training_days_per_week must be between 3 and 6"}), 400
+
+    new_data               = generate_programme(profile, objective, diet_pref, training_days)
     new_data["difficulty"] = difficulty
 
     prog.diet_preference = diet_pref
