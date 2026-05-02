@@ -59,8 +59,11 @@ def get_detail_meal(meal_id):
 def analyze_food():
     data = request.get_json()
     food_name = data.get('food_name')
+    print("FOOD NAME:", food_name)  # ✅ ICI
     quantity = float(data.get('quantity', 1)) # Récupère la quantité (ex: 2)
+
     selected_measure = data.get('measure', 'Gram') # Récupère l'unité (ex: "Whole")
+    print("DATA:", data)
 
     # Appel au service pour avoir les données de BASE (pour 100g)
     result = service.fetch_nutrition(food_name)
@@ -112,6 +115,7 @@ def test_edamam():
         "app_key": service.app_key,
         "ingr": food_name
     }
+    print("PARAMS:", params)  # ✅ ICI
     try:
         r = requests.get(service.base_url, params=params)
         if r.status_code != 200:
