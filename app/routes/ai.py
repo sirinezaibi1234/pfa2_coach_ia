@@ -7,34 +7,59 @@ ai_bp = Blueprint("ai", __name__)
 hf = HuggingFaceClient()
 
 
-def _local_text_fallback(prompt: str) -> str:
-    text = (prompt or "").lower()
+def _extract_user_message(prompt: str) -> str:
+    for line in (prompt or "").splitlines():
+        if line.strip().lower().startswith("user message:"):
+            return line.split(":", 1)[1].strip()
+    return ""
 
-    if "calories" in text or "meal" in text or "nutrition" in text or "macros" in text:
+
+def _local_text_fallback(prompt: str) -> str:
+    user_message = _extract_user_message(prompt) or ""
+    text = (user_message or prompt or "").lower()
+
+    if any(key in text for key in ("calories", "calorie", "kcal", "meal", "repas", "nutrition", "macros", "protein")):
         return (
             "Mode hors ligne actif. Je ne peux pas contacter le modele externe pour l instant.\n\n"
             "Plan nutrition rapide:\n"
-            "1) Priorise une assiette: 1/2 legumes, 1/4 proteines, 1/4 glucides complets.\n"
+            "1) Assiette type: 1/2 legumes, 1/4 proteines, 1/4 glucides complets.\n"
             "2) Vise 1.6 a 2.0 g de proteines/kg/jour.\n"
             "3) Limite les calories liquides et ajoute 500 ml d eau avant les repas.\n"
-            "4) Surveiller portions huile/sauces (fort impact calorique).\n"
-            "Action du jour: prepare un repas riche en proteines + legumes."
+            "4) Surveille les portions d huile/sauces (fort impact calorique).\n"
+            f"Question recue: {user_message or 'non precisee'}. Donne moi ton repas exact pour un calcul plus fin."
         )
 
-    if "workout" in text or "training" in text or "exercise" in text:
+    if any(key in text for key in ("workout", "training", "entrainement", "exercise", "seance", "musculation", "cardio")):
         return (
             "Mode hors ligne actif. Coach local: \n"
             "- Echauffement 8-10 min\n"
             "- 4 exercices full-body (3 series chacun)\n"
             "- 15-20 min cardio modere\n"
             "- Retour au calme 5 min\n"
-            "Progression: ajoute 1-2 repetitions par semaine si execution propre."
+            "Progression: ajoute 1-2 repetitions par semaine si execution propre.\n"
+            f"Details demandes: {user_message or 'non precise'}."
+        )
+
+    if any(key in text for key in ("eau", "hydration", "water", "boire")):
+        return (
+            "Mode hors ligne actif. Hydratation express:\n"
+            "- 30-35 ml d eau/kg/jour\n"
+            "- 1 verre au lever, 1 avant chaque repas\n"
+            "- Ajuste +250-500 ml si entrainement\n"
+            f"Contexte: {user_message or 'non precise'}."
+        )
+
+    if any(key in text for key in ("objectif", "perte", "prise", "poids", "seche", "masse")):
+        return (
+            "Mode hors ligne actif. Objectif: on peut clarifier.\n"
+            "Indique ton poids actuel, ta taille, et ton objectif (perte, maintien, prise).\n"
+            "Ensuite je propose un plan calories + entrainement adapte."
         )
 
     return (
         "Mode hors ligne actif. Je ne peux pas joindre le service IA externe actuellement, "
-        "mais je reste disponible en mode coach local. Donne moi ton objectif, ton repas ou ta seance, "
-        "et je te proposerai un plan concret."
+        "mais je reste disponible en mode coach local. Dis moi ton objectif, ton repas, "
+        "ou ta seance, et je te proposerai un plan concret."
     )
 
 

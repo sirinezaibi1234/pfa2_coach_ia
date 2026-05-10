@@ -5,7 +5,8 @@ import base64
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+_ENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
+load_dotenv(_ENV_PATH)
 
 
 class HuggingFaceClient:
@@ -45,7 +46,9 @@ class HuggingFaceClient:
         body = {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": max_tokens
+            "max_tokens": max_tokens,
+            "temperature": 0.7,
+            "top_p": 0.9,
         }
 
         response = requests.post(url, headers=self.headers, json=body)

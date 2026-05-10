@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 import os
 from flask_cors import CORS
 
-load_dotenv()
+_ENV_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv(_ENV_PATH)
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -46,6 +47,7 @@ def create_app():
     from app.routes.nutrition_routes import nutrition_bp
     from app.routes.water import water_bp
     from app.routes.admin_routes import admin_bp
+    from app.routes.training import training_bp
     
 
     app.register_blueprint(auth_bp,      url_prefix="/api/auth")
@@ -56,6 +58,7 @@ def create_app():
     app.register_blueprint(nutrition_bp, url_prefix="/api/nutrition")
     app.register_blueprint(water_bp,     url_prefix="/api/water")
     app.register_blueprint(admin_bp,    url_prefix="/api/admin")
+    app.register_blueprint(training_bp, url_prefix="/api/training")
 
     
     # Create tables
@@ -67,6 +70,7 @@ def create_app():
         from app.models.meal import Meal
         from app.models.water_log import WaterLog
         from app.models.nutrition import Food, MealLog
+        from app.models.training_log import TrainingLog
 
         db.create_all()
 
