@@ -140,10 +140,16 @@ def adjust():
     objective  = Objective.query.filter_by(user_id=user.id, is_active=True).first()
     diet_pref  = data.get("diet_preference", prog.diet_preference)
     difficulty = data.get("difficulty", prog.difficulty)
+    available_days = data.get("available_days")
     training_days = data.get(
         "training_days_per_week",
         prog.programme_data.get("training_days_per_week") if prog.programme_data else None,
     )
+
+    if available_days is not None:
+        if not isinstance(available_days, list) or len(available_days) == 0:
+            return jsonify({"error": "available_days must be a non-empty list"}), 400
+        training_days = len(available_days)
 
     VALID_DIFFS = ["Beginner", "Intermediate", "Advanced"]
     if difficulty not in VALID_DIFFS:
@@ -158,7 +164,7 @@ def adjust():
         if training_days < 3 or training_days > 6:
             return jsonify({"error": "training_days_per_week must be between 3 and 6"}), 400
 
-    new_data               = generate_programme(profile, objective, diet_pref, training_days)
+    new_data               = generate_programme(profile, objective, diet_pref, training_days, available_days)
     new_data["difficulty"] = difficulty
 
     prog.diet_preference = diet_pref

@@ -126,15 +126,24 @@ def _get_meals(diet_type, tdee, goal):
     return meal_plan, int(calorie_target)
 
 
-def _get_weekly_schedule(workout_types, difficulty, activity_level, preferred_days_per_week=None):
+def _get_weekly_schedule(workout_types, difficulty, activity_level, preferred_days_per_week=None, preferred_days=None):
     """Build a 7-day schedule based on activity level or user preference."""
-    if preferred_days_per_week is not None:
-        days_per_week = max(3, min(6, int(preferred_days_per_week)))
-    else:
-        days_per_week = ACTIVITY_TO_DAYS.get(activity_level, 4)
-    day_names     = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    schedule      = {}
-    workout_day_indices = set(_spread_workout_days(days_per_week))
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    schedule  = {}
+
+    workout_day_indices = None
+    if preferred_days:
+        normalized = {str(d).strip().lower() for d in preferred_days if str(d).strip()}
+        indices = [i for i, name in enumerate(day_names) if name.lower() in normalized]
+        if indices:
+            workout_day_indices = set(indices)
+
+    if workout_day_indices is None:
+        if preferred_days_per_week is not None:
+            days_per_week = max(3, min(6, int(preferred_days_per_week)))
+        else:
+            days_per_week = ACTIVITY_TO_DAYS.get(activity_level, 4)
+        workout_day_indices = set(_spread_workout_days(days_per_week))
 
     # Build a shuffled sequence of workout types for more day-to-day variation.
     if workout_types:
@@ -256,7 +265,7 @@ def _get_progress_rules(goal, profile, objective):
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
-def generate_programme(profile, objective, diet_preference="Balanced", training_days_per_week=None):
+def generate_programme(profile, objective, diet_preference="Balanced", training_days_per_week=None, preferred_days=None):
     """
     Generate a full sport programme from user profile + objective.
 
@@ -286,7 +295,10 @@ def generate_programme(profile, objective, diet_preference="Balanced", training_
         difficulty,
         activity_level,
         training_days_per_week,
+        preferred_days,
     )
+
+    available_days = [day for day, data in weekly_schedule.items() if data["type"] == "workout"]
 
     # Dynamic progress rules calculated for this specific user
     progress_rules = _get_progress_rules(goal, profile, objective)
@@ -301,6 +313,7 @@ def generate_programme(profile, objective, diet_preference="Balanced", training_
         "calorie_target":  calorie_target,
         "diet_preference": diet_preference,
         "training_days_per_week": sum(1 for d in weekly_schedule.values() if d["type"] == "workout"),
+        "available_days": available_days,
         "weekly_schedule": weekly_schedule,
         "daily_meals":     meal_plan,
         "progress_rules":  progress_rules,
