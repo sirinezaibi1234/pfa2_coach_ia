@@ -121,7 +121,15 @@ def _get_meals(diet_type, tdee, goal):
         if options:
             target_meal_cal = calorie_target * (0.30 if meal_type in ["Lunch", "Dinner"] else 0.20)
             best            = min(options, key=lambda m: abs(m["Calories"] - target_meal_cal))
-            meal_plan[meal_type.lower()] = best
+            meal_plan[meal_type.lower()] = {
+                "Food_Items": best.get("meal_name") or best.get("meal_type"),
+                "Calories":  best.get("Calories", 0),
+                "Protein":   best.get("Protein", best.get("Proteins", 0)),
+                "Carbs":     best.get("Carbs", 0),
+                "Fat":       best.get("Fat", best.get("Fats", 0)),
+                "Meal_Type": best.get("meal_type", meal_type),
+                "Diet_Type": best.get("diet_type", diet_type),
+            }
 
     return meal_plan, int(calorie_target)
 

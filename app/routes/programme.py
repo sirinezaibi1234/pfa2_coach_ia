@@ -16,6 +16,36 @@ from app.services.programme_service import generate_programme, evaluate_progress
 
 programme_bp = Blueprint("programme", __name__)
 
+_DIET_ALIASES = {
+    "vegan": "Vegan",
+    "vegetarian": "Vegetarian",
+    "paleo": "Paleo",
+    "keto": "Keto",
+    "low-carb": "Low-Carb",
+    "low carb": "Low-Carb",
+    "lowcarb": "Low-Carb",
+    "balanced": "Balanced",
+}
+_VALID_DIETS = ["Vegan", "Vegetarian", "Paleo", "Keto", "Low-Carb", "Balanced"]
+_VALID_DIFFS = ["Beginner", "Intermediate", "Advanced"]
+
+
+def _normalize_diet(value):
+    if value is None:
+        return "Balanced"
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        return _DIET_ALIASES.get(normalized, value.strip())
+    return value
+
+
+def _normalize_difficulty(value, default):
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value.strip().capitalize()
+    return value
+
 
 def _get_current_user():
     return User.query.get_or_404(int(get_jwt_identity()))
@@ -38,13 +68,13 @@ def generate():
     if not objective:
         return jsonify({"error": "Please set an active objective first"}), 400
 
-    data      = request.get_json() or {}
-    diet_pref = data.get("diet_preference", "Balanced")
+    data          = request.get_json() or {}
+    diet_pref_raw = data.get("diet_preference", "Balanced")
+    diet_pref     = _normalize_diet(diet_pref_raw)
     training_days = data.get("training_days_per_week")
 
-    VALID_DIETS = ["Vegan", "Vegetarian", "Paleo", "Keto", "Low-Carb", "Balanced"]
-    if diet_pref not in VALID_DIETS:
-        return jsonify({"error": f"diet_preference must be one of {VALID_DIETS}"}), 400
+    if diet_pref not in _VALID_DIETS:
+        return jsonify({"error": f"diet_preference must be one of {_VALID_DIETS}"}), 400
 
     if training_days is not None:
         try:
@@ -138,8 +168,11 @@ def adjust():
     data       = request.get_json() or {}
     profile    = UserProfile.query.filter_by(user_id=user.id).first()
     objective  = Objective.query.filter_by(user_id=user.id, is_active=True).first()
-    diet_pref  = data.get("diet_preference", prog.diet_preference)
-    difficulty = data.get("difficulty", prog.difficulty)
+    diet_pref  = _normalize_diet(data.get("diet_preference", prog.diet_preference))
+    difficulty = _normalize_difficulty(
+        data.get("difficulty", data.get("difficulty_override", prog.difficulty)),
+        prog.difficulty,
+    )
     available_days = data.get("available_days")
     training_days = data.get(
         "training_days_per_week",
@@ -151,9 +184,8 @@ def adjust():
             return jsonify({"error": "available_days must be a non-empty list"}), 400
         training_days = len(available_days)
 
-    VALID_DIFFS = ["Beginner", "Intermediate", "Advanced"]
-    if difficulty not in VALID_DIFFS:
-        return jsonify({"error": f"difficulty must be one of {VALID_DIFFS}"}), 400
+    if difficulty not in _VALID_DIFFS:
+        return jsonify({"error": f"difficulty must be one of {_VALID_DIFFS}"}), 400
 
     if training_days is not None:
         try:

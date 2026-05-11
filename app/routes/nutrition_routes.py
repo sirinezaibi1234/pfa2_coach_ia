@@ -57,16 +57,26 @@ def get_detail_meal(meal_id):
 
 @nutrition_bp.route('/analyze-food', methods=['POST'])
 def analyze_food():
-    data = request.get_json()
+    data = request.get_json() or {}
     food_name = data.get('food_name')
-    quantity = float(data.get('quantity', 1)) # Récupère la quantité (ex: 2)
-    selected_measure = data.get('measure', 'Gram') # Récupère l'unité (ex: "Whole")
+    try:
+        quantity = float(data.get('quantity', 1))
+    except (TypeError, ValueError):
+        return jsonify({"error": "quantity must be a number"}), 400
+    selected_measure = data.get('measure', 'Gram')
+
+    if not food_name or not str(food_name).strip():
+        return jsonify({"error": "food_name is required"}), 400
 
     # Appel au service pour avoir les données de BASE (pour 100g)
     result = service.fetch_nutrition(food_name)
     
-    if not result or "error" in result:
+    if not result:
         return jsonify({"error": "Aliment non trouvé"}), 404
+
+    if "error" in result:
+        status = 500 if "Cles API" in str(result["error"]) or "Connection" in str(result["error"]) else 404
+        return jsonify({"error": result.get("error"), "details": result.get("details")}), status
 
     # --- ÉTAPE 1 : TROUVER LE POIDS DE L'UNITÉ ---
     # On cherche dans la liste 'measures' celle qui a le bon label
